@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPU VRAM Calculator for LLMs</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f2f3f5;
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .calculator-container {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        max-width: 900px;
+        width: 100%;
+        padding: 40px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+      }
+
+      h1 {
+        color: #1f2937;
+        margin-bottom: 10px;
+        font-size: 28px;
+        font-weight: 600;
+      }
+
+      .subtitle {
+        color: #4b5563;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .presets {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .presets h3 {
+        color: #1f2937;
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+
+      .preset-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      .preset-btn {
+        padding: 12px 20px;
+        background: #374151;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 0.2s, transform 0.2s;
+      }
+
+      .preset-btn:hover {
+        background: #111827;
+        transform: translateY(-1px);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      label {
+        color: #1f2937;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      input,
+      select {
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+        background: #ffffff;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #2563eb;
+      }
+
+      .calculate-btn {
+        width: 100%;
+        padding: 15px;
+        background: #1d4ed8;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 30px;
+        transition: background 0.2s, transform 0.2s;
+      }
+
+      .calculate-btn:hover {
+        background: #1e40af;
+        transform: translateY(-1px);
+      }
+
+      .results {
+        background: #1f2937;
+        padding: 30px;
+        border-radius: 12px;
+        color: white;
+      }
+
+      .results h2 {
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .result-item {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+
+      .result-label {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 5px;
+      }
+
+      .result-value {
+        font-size: 22px;
+        font-weight: 600;
+      }
+
+      .breakdown {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .breakdown h3 {
+        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .breakdown-item:last-child {
+        border-bottom: none;
+      }
+
+      .gpu-recommendation {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+      }
+
+      .warning {
+        background: rgba(255, 193, 7, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      .success {
+        background: rgba(34, 197, 94, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      @media (max-width: 768px) {
+        .calculator-container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator-container">
+      <h1>🚀 GPU VRAM Calculator for LLMs</h1>
+      <p class="subtitle">
+        Calculate VRAM requirements based on model size and context length
+      </p>
+
+      <div class="presets">
+        <h3>Quick Presets</h3>
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="loadPreset('qwen25-30b')">
+            Qwen2.5-30B
+          </button>
+          <button class="preset-btn" onclick="loadPreset('llama3-70b')">
+            Llama 3-70B
+          </button>
+          <button class="preset-btn" onclick="loadPreset('llama3-8b')">
+            Llama 3-8B
+          </button>
+          <button class="preset-btn" onclick="loadPreset('mistral-7b')">
+            Mistral-7B
+          </button>
+        </div>
+      </div>
+
+      <form id="calcForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="modelName">Model Name (Optional)</label>
+            <input
+              type="text"
+              id="modelName"
+              placeholder="e.g., Typhoon2.5-Qwen3-30B"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="numLayers">Number of Layers</label>
+            <input type="number" id="numLayers" value="96" required />
+          </div>
+
+          <div class="form-group">
+            <label for="hiddenSize">Hidden Size</label>
+            <input type="number" id="hiddenSize" value="7168" required />
+          </div>
+
+          <div class="form-group">
+            <label for="kvDtype">KV Cache Data Type</label>
+            <select id="kvDtype" required>
+              <option value="1">FP8 (1 byte)</option>
+              <option value="2" selected>FP16 (2 bytes)</option>
+              <option value="4">FP32 (4 bytes)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="baseModelSize">Base Model Size (GB)</label>
+            <input
+              type="number"
+              id="baseModelSize"
+              value="35"
+              step="0.1"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="contextSize">Context Size (tokens)</label>
+            <input type="number" id="contextSize" value="256000" required />
+          </div>
+        </div>
+
+        <button type="submit" class="calculate-btn">
+          Calculate VRAM Requirements
+        </button>
+      </form>
+
+      <div id="results" style="display: none" class="results">
+        <h2>📊 VRAM Requirements</h2>
+
+        <div class="result-item">
+          <div class="result-label">KV Cache per Token</div>
+          <div class="result-value" id="kvPerToken">-</div>
+          <div class="result-detail" id="kvPerTokenDetail">-</div>
+        </div>
+
+        <div class="breakdown">
+          <h3>Breakdown</h3>
+          <div class="breakdown-item">
+            <span>Base Model (Weights)</span>
+            <span id="baseModelVram">-</span>
+          </div>
+          <div class="breakdown-item">
+            <span>KV Cache</span>
+            <span id="kvCacheVram">-</span>
+          </div>
+          <div class="breakdown-item">
+            <span>Overhead (~10%)</span>
+            <span id="overheadVram">-</span>
+          </div>
+          <div
+            class="breakdown-item"
+            style="font-weight: 700; font-size: 18px; padding-top: 15px"
+          >
+            <span>Total VRAM Required</span>
+            <span id="totalVram">-</span>
+          </div>
+        </div>
+
+        <div class="gpu-recommendation">
+          <h3>🎯 GPU Recommendation</h3>
+          <div id="gpuRecommendation"></div>
+        </div>
+
+        <div id="contextTable" style="margin-top: 20px"></div>
+      </div>
+    </div>
+
+    <script>
+      const presets = {
+        "qwen25-30b": {
+          name: "Qwen2.5-30B",
+          layers: 96,
+          hiddenSize: 7168,
+          kvDtype: 1,
+          baseModelSize: 35,
+        },
+        "llama3-70b": {
+          name: "Llama 3-70B",
+          layers: 80,
+          hiddenSize: 8192,
+          kvDtype: 2,
+          baseModelSize: 70,
+        },
+        "llama3-8b": {
+          name: "Llama 3-8B",
+          layers: 32,
+          hiddenSize: 4096,
+          kvDtype: 2,
+          baseModelSize: 8,
+        },
+        "mistral-7b": {
+          name: "Mistral-7B",
+          layers: 32,
+          hiddenSize: 4096,
+          kvDtype: 2,
+          baseModelSize: 7,
+        },
+      };
+
+      function loadPreset(presetName) {
+        const preset = presets[presetName];
+        document.getElementById("modelName").value = preset.name;
+        document.getElementById("numLayers").value = preset.layers;
+        document.getElementById("hiddenSize").value = preset.hiddenSize;
+        document.getElementById("kvDtype").value = preset.kvDtype;
+        document.getElementById("baseModelSize").value = preset.baseModelSize;
+      }
+
+      document
+        .getElementById("calcForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          calculate();
+        });
+
+      function calculate() {
+        const layers = parseInt(document.getElementById("numLayers").value);
+        const hiddenSize = parseInt(
+          document.getElementById("hiddenSize").value
+        );
+        const kvDtypeBytes = parseInt(document.getElementById("kvDtype").value);
+        const baseModelSize = parseFloat(
+          document.getElementById("baseModelSize").value
+        );
+        const contextSize = parseInt(
+          document.getElementById("contextSize").value
+        );
+        const modelName =
+          document.getElementById("modelName").value || "Your Model";
+
+        // KV cache calculation
+        // Formula: layers × hidden_size × 2 (K+V) × bytes_per_element
+        const kvPerTokenBytes = layers * hiddenSize * 2 * kvDtypeBytes;
+        const kvPerTokenMB = kvPerTokenBytes / (1024 * 1024);
+
+        // Total KV cache for context
+        const totalKvCacheGB = (contextSize * kvPerTokenMB) / 1024;
+
+        // Total VRAM with 10% overhead
+        const overhead = (baseModelSize + totalKvCacheGB) * 0.1;
+        const totalVram = baseModelSize + totalKvCacheGB + overhead;
+
+        // Display results
+        document.getElementById("results").style.display = "block";
+        document.getElementById(
+          "kvPerToken"
+        ).textContent = `${kvPerTokenMB.toFixed(2)} MB`;
+        document.getElementById(
+          "kvPerTokenDetail"
+        ).textContent = `${layers} layers × ${hiddenSize} hidden × 2 (K+V) × ${kvDtypeBytes}B`;
+
+        document.getElementById(
+          "baseModelVram"
+        ).textContent = `${baseModelSize.toFixed(1)} GB`;
+        document.getElementById(
+          "kvCacheVram"
+        ).textContent = `${totalKvCacheGB.toFixed(1)} GB`;
+        document.getElementById(
+          "overheadVram"
+        ).textContent = `${overhead.toFixed(1)} GB`;
+        document.getElementById("totalVram").textContent = `${totalVram.toFixed(
+          1
+        )} GB`;
+
+        // GPU recommendation
+        const h100Count = Math.ceil(totalVram / 80);
+        const a100Count = Math.ceil(totalVram / 80);
+        const l40sCount = Math.ceil(totalVram / 48);
+
+        let recommendation = "";
+        if (totalVram <= 24) {
+          recommendation = `<div class="success">✅ <strong>1× RTX 4090 (24GB)</strong> or <strong>1× RTX A5000 (24GB)</strong> is sufficient</div>`;
+        } else if (totalVram <= 48) {
+          recommendation = `<div class="success">✅ <strong>1× L40S (48GB)</strong> or <strong>1× A6000 (48GB)</strong> is sufficient</div>`;
+        } else if (totalVram <= 80) {
+          recommendation = `<div class="warning">⚠️ You need <strong>1× H100 (80GB)</strong> or <strong>1× A100 (80GB)</strong></div>`;
+        } else {
+          recommendation = `
+                    <div class="warning">
+                        ⚠️ Single GPU insufficient. Options:<br>
+                        • <strong>${h100Count}× H100 (80GB)</strong> - Recommended for production<br>
+                        • <strong>${a100Count}× A100 (80GB)</strong> - Alternative<br>
+                        • <strong>${l40sCount}× L40S (48GB)</strong> - Budget option
+                    </div>
+                `;
+        }
+
+        document.getElementById("gpuRecommendation").innerHTML = recommendation;
+
+        // Context size table
+        generateContextTable(
+          layers,
+          hiddenSize,
+          kvDtypeBytes,
+          baseModelSize,
+          kvPerTokenMB
+        );
+
+        // Scroll to results
+        document
+          .getElementById("results")
+          .scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function generateContextTable(
+        layers,
+        hiddenSize,
+        kvDtypeBytes,
+        baseModelSize,
+        kvPerTokenMB
+      ) {
+        const contexts = [
+          8000, 16000, 32000, 65000, 100000, 128000, 200000, 256000,
+        ];
+        let tableHTML =
+          '<h3 style="margin-bottom: 15px;">Context Size Scenarios</h3>';
+        tableHTML +=
+          '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse;">';
+        tableHTML +=
+          '<thead><tr style="background: rgba(255,255,255,0.2);"><th style="padding: 10px; text-align: left;">Context</th><th style="padding: 10px; text-align: right;">KV Cache</th><th style="padding: 10px; text-align: right;">Total VRAM</th><th style="padding: 10px; text-align: left;">GPU Needed</th></tr></thead>';
+        tableHTML += "<tbody>";
+
+        contexts.forEach((ctx) => {
+          const kvCache = (ctx * kvPerTokenMB) / 1024;
+          const overhead = (baseModelSize + kvCache) * 0.1;
+          const total = baseModelSize + kvCache + overhead;
+          let gpuText = "";
+
+          if (total <= 24) gpuText = "1× 4090/A5000";
+          else if (total <= 48) gpuText = "1× L40S/A6000";
+          else if (total <= 80) gpuText = "1× H100/A100";
+          else gpuText = `${Math.ceil(total / 80)}× H100`;
+
+          tableHTML += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 10px;">${(ctx / 1000).toFixed(0)}k</td>
+                    <td style="padding: 10px; text-align: right;">${kvCache.toFixed(
+                      1
+                    )} GB</td>
+                    <td style="padding: 10px; text-align: right;"><strong>${total.toFixed(
+                      1
+                    )} GB</strong></td>
+                    <td style="padding: 10px;">${gpuText}</td>
+                </tr>`;
+        });
+
+        tableHTML += "</tbody></table></div>";
+        document.getElementById("contextTable").innerHTML = tableHTML;
+      }
+    </script>
+  </body>
+</html>
