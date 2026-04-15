@@ -1,522 +1,514 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GPU VRAM Calculator for LLMs</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRAM Calculator | GPU Calculator for LLMs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #f2f3f5;
-        min-height: 100vh;
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .calculator-container {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e0e0e0;
-        max-width: 900px;
-        width: 100%;
-        padding: 40px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-      }
-
-      h1 {
-        color: #1f2937;
-        margin-bottom: 10px;
-        font-size: 28px;
-        font-weight: 600;
-      }
-
-      .subtitle {
-        color: #4b5563;
-        margin-bottom: 30px;
-        font-size: 14px;
-      }
-
-      .presets {
-        margin-bottom: 30px;
-        padding: 20px;
-        background: #f9fafb;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
-      }
-
-      .presets h3 {
-        color: #1f2937;
-        margin-bottom: 15px;
-        font-size: 18px;
-      }
-
-      .preset-buttons {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px;
-      }
-
-      .preset-btn {
-        padding: 12px 20px;
-        background: #374151;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        transition: background 0.2s, transform 0.2s;
-      }
-
-      .preset-btn:hover {
-        background: #111827;
-        transform: translateY(-1px);
-      }
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      label {
-        color: #1f2937;
-        font-weight: 600;
-        margin-bottom: 8px;
-        font-size: 14px;
-      }
-
-      input,
-      select {
-        padding: 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: border-color 0.3s;
-        background: #ffffff;
-      }
-
-      input:focus,
-      select:focus {
-        outline: none;
-        border-color: #2563eb;
-      }
-
-      .calculate-btn {
-        width: 100%;
-        padding: 15px;
-        background: #1d4ed8;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-bottom: 30px;
-        transition: background 0.2s, transform 0.2s;
-      }
-
-      .calculate-btn:hover {
-        background: #1e40af;
-        transform: translateY(-1px);
-      }
-
-      .results {
-        background: #1f2937;
-        padding: 30px;
-        border-radius: 12px;
-        color: white;
-      }
-
-      .results h2 {
-        margin-bottom: 20px;
-        font-size: 24px;
-        font-weight: 600;
-      }
-
-      .result-item {
-        background: rgba(255, 255, 255, 0.08);
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-      }
-
-      .result-label {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 5px;
-      }
-
-      .result-value {
-        font-size: 22px;
-        font-weight: 600;
-      }
-
-      .breakdown {
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-      }
-
-      .breakdown h3 {
-        margin-bottom: 15px;
-        font-size: 18px;
-        font-weight: 500;
-      }
-
-      .breakdown-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .breakdown-item:last-child {
-        border-bottom: none;
-      }
-
-      .gpu-recommendation {
-        background: rgba(255, 255, 255, 0.08);
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-      }
-
-      .warning {
-        background: rgba(255, 193, 7, 0.2);
-        padding: 15px;
-        border-radius: 8px;
-      }
-
-      .success {
-        background: rgba(34, 197, 94, 0.2);
-        padding: 15px;
-        border-radius: 8px;
-      }
-
-      @media (max-width: 768px) {
-        .calculator-container {
-          padding: 20px;
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        input[type="range"] { accent-color: #3b82f6; }
+        .glass-panel { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .warning-glow { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-
-        h1 {
-          font-size: 24px;
-        }
-
-        .form-grid {
-          grid-template-columns: 1fr;
-        }
-      }
+        select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
     </style>
-  </head>
-  <body>
-    <div class="calculator-container">
-      <h1>🚀 GPU VRAM Calculator for LLMs</h1>
-      <p class="subtitle">
-        Calculate VRAM requirements based on model size and context length
-      </p>
+</head>
+<body class="min-h-screen p-4 md:p-10 selection:bg-blue-500/30">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-1">
+                <h1 class="text-4xl font-extrabold tracking-tighter text-white flex items-center gap-3">
+                    <span class="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-2xl shadow-blue-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M6 21V19"/><path d="M10 21V19"/><path d="M14 21V19"/><path d="M18 21V19"/><path d="M8 7V3"/><path d="M16 7V3"/><path d="M2 13h20"/></svg>
+                    </span>
+                    VRAM Calculator <span class="text-blue-500 font-medium text-lg bg-blue-500/10 px-3 py-0.5 rounded-full border border-blue-500/20">v26.04.15</span>
+                </h1>
+                <p class="text-slate-400 font-medium">GPU VRAM Calculator • Build 2026.4.15 by <a href="https://iamickdev.com" class="text-blue-500 hover:underline">arnonsang</a></p>
+            </div>
+            
+            <div class="w-full lg:w-96 group">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-widest ml-1">Architecture Presets</label>
+                <select id="presetSelect" onchange="loadPreset(this.value)" class="w-full bg-slate-900/80 border border-slate-700 text-slate-200 text-sm font-semibold rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-500 shadow-xl">
+                    <!-- Dynamically Populated -->
+                </select>
+            </div>
+        </header>
 
-      <div class="presets">
-        <h3>Quick Presets</h3>
-        <div class="preset-buttons">
-          <button class="preset-btn" onclick="loadPreset('qwen25-30b')">
-            Qwen2.5-30B
-          </button>
-          <button class="preset-btn" onclick="loadPreset('llama3-70b')">
-            Llama 3-70B
-          </button>
-          <button class="preset-btn" onclick="loadPreset('llama3-8b')">
-            Llama 3-8B
-          </button>
-          <button class="preset-btn" onclick="loadPreset('mistral-7b')">
-            Mistral-7B
-          </button>
-        </div>
-      </div>
+        <main class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <!-- Left Column: Settings -->
+            <section class="xl:col-span-4 space-y-6">
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h2 class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] mb-6">1. Precision & Scale</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="input-group">
+                            <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Quantization Strategy</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setPrecision(16, this)" class="prec-btn py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold transition-all">BF16 / FP16</button>
+                                <button onclick="setPrecision(8, this)" class="prec-btn py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition-all">FP8 / INT8</button>
+                                <button onclick="setPrecision(4.5, this)" class="prec-btn py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition-all">Q4_K_M (4.5b)</button>
+                                <button onclick="setPrecision(1.5, this)" class="prec-btn py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition-all">Ternary (1.5b)</button>
+                            </div>
+                            <input type="hidden" id="bitsPerWeight" value="16">
+                        </div>
 
-      <form id="calcForm">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="modelName">Model Name (Optional)</label>
-            <input
-              type="text"
-              id="modelName"
-              placeholder="e.g., Typhoon2.5-Qwen3-30B"
-            />
-          </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center px-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Parameters (Billions)</label>
+                                <input type="number" id="params" step="0.1" value="27" class="w-20 bg-transparent text-right font-bold text-white focus:outline-none">
+                            </div>
+                            <input type="range" id="paramRange" min="0.1" max="1000" step="0.1" value="27" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <label for="numLayers">Number of Layers</label>
-            <input type="number" id="numLayers" value="96" required />
-          </div>
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h2 class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] mb-6">2. Architecture Detail</h2>
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Layers</label>
+                            <input type="number" id="layers" value="46" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Hidden Size</label>
+                            <input type="number" id="hiddenSize" value="4608" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">KV Heads</label>
+                            <input type="number" id="kvHeads" value="16" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Query Heads</label>
+                            <input type="number" id="numHeads" value="32" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                        <div class="col-span-2 space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">KV Quantization</label>
+                            <select id="kvDtype" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500 outline-none">
+                                <option value="0.5">INT4 (0.5 Byte)</option>
+                                <option value="1" selected>FP8 (1 Byte)</option>
+                                <option value="2">BF16 (2 Bytes)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <label for="hiddenSize">Hidden Size</label>
-            <input type="number" id="hiddenSize" value="7168" required />
-          </div>
+                <div class="glass-panel p-6 rounded-3xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em]">3. Context Depth</h2>
+                        <span id="contextVal" class="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black rounded-lg">128k</span>
+                    </div>
+                    <input type="range" id="contextRange" min="4096" max="10485760" step="4096" value="131072" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer mb-2">
+                    <div class="flex justify-between text-[8px] text-slate-500 uppercase font-black tracking-tighter">
+                        <span>4k</span>
+                        <span>1M</span>
+                        <span>4M</span>
+                        <span>10M</span>
+                    </div>
+                </div>
+            </section>
 
-          <div class="form-group">
-            <label for="kvDtype">KV Cache Data Type</label>
-            <select id="kvDtype" required>
-              <option value="1">FP8 (1 byte)</option>
-              <option value="2" selected>FP16 (2 bytes)</option>
-              <option value="4">FP32 (4 bytes)</option>
-            </select>
-          </div>
+            <!-- Right Column: Analytics -->
+            <section class="xl:col-span-8 space-y-6">
+                <!-- VRAM Summary -->
+                <div id="gaugeContainer" class="glass-panel p-8 rounded-[2.5rem] relative transition-all duration-500 border border-white/5 shadow-2xl">
+                    <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-end justify-between gap-8">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Total Memory Load</span>
+                            <div class="flex items-baseline gap-3">
+                                <span id="totalVramDisplay" class="text-7xl font-black text-white tracking-tighter">0.00</span>
+                                <span class="text-3xl font-extrabold text-blue-500">GB</span>
+                            </div>
+                            <div id="mainRecommendation" class="flex items-center gap-2 mt-4 px-4 py-2 bg-blue-500/10 rounded-2xl border border-blue-500/20 inline-flex">
+                                <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Recommended Best Fit:</span>
+                                <span id="recommendedGpuName" class="text-sm font-bold text-slate-200">RTX 4090 (24GB)</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-3 w-full lg:w-auto">
+                            <div id="statusBadge" class="px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl transition-all duration-300">
+                                <!-- JS Populated -->
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Context overhead: <span id="ctxSizeMB" class="text-slate-300 font-black">0 MB</span>/token</p>
+                                <p id="contextNotice" class="text-[9px] text-red-500 font-bold uppercase mt-1 animate-pulse hidden">Multi-Node Distribution Advised</p>
+                            </div>
+                        </div>
+                    </div>
 
-          <div class="form-group">
-            <label for="baseModelSize">Base Model Size (GB)</label>
-            <input
-              type="number"
-              id="baseModelSize"
-              value="35"
-              step="0.1"
-              required
-            />
-          </div>
+                    <!-- Visual Breakdown Bar -->
+                    <div class="mt-10">
+                        <div class="h-5 w-full bg-slate-900/50 rounded-full flex overflow-hidden border border-white/5 p-1 shadow-inner">
+                            <div id="barWeights" class="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-1000 rounded-l-full" style="width: 0%"></div>
+                            <div id="barKV" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000" style="width: 0%"></div>
+                            <div id="barOverhead" class="h-full bg-slate-700 transition-all duration-1000 rounded-r-full" style="width: 0%"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Model Weights</p>
+                                    <p id="weightValText" class="text-base font-bold text-slate-200">0 GB</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">KV Cache</p>
+                                    <p id="kvValText" class="text-base font-bold text-slate-200">0 GB</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-4 h-4 rounded-full bg-slate-600"></div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">System Overhead</p>
+                                    <p class="text-base font-bold text-slate-200">2.2 GB</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-          <div class="form-group">
-            <label for="contextSize">Context Size (tokens)</label>
-            <input type="number" id="contextSize" value="256000" required />
-          </div>
-        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- GPU Matrix Table -->
+                    <div class="glass-panel p-8 rounded-3xl border border-slate-700/50 flex flex-col">
+                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Hardware Deployment Matrix
+                        </h3>
+                        <div class="flex-1 max-h-[500px] overflow-y-auto custom-scrollbar pr-3">
+                            <div id="gpuMatrixBody" class="space-y-8">
+                                <!-- JS -->
+                            </div>
+                        </div>
+                    </div>
 
-        <button type="submit" class="calculate-btn">
-          Calculate VRAM Requirements
-        </button>
-      </form>
-
-      <div id="results" style="display: none" class="results">
-        <h2>📊 VRAM Requirements</h2>
-
-        <div class="result-item">
-          <div class="result-label">KV Cache per Token</div>
-          <div class="result-value" id="kvPerToken">-</div>
-          <div class="result-detail" id="kvPerTokenDetail">-</div>
-        </div>
-
-        <div class="breakdown">
-          <h3>Breakdown</h3>
-          <div class="breakdown-item">
-            <span>Base Model (Weights)</span>
-            <span id="baseModelVram">-</span>
-          </div>
-          <div class="breakdown-item">
-            <span>KV Cache</span>
-            <span id="kvCacheVram">-</span>
-          </div>
-          <div class="breakdown-item">
-            <span>Overhead (~10%)</span>
-            <span id="overheadVram">-</span>
-          </div>
-          <div
-            class="breakdown-item"
-            style="font-weight: 700; font-size: 18px; padding-top: 15px"
-          >
-            <span>Total VRAM Required</span>
-            <span id="totalVram">-</span>
-          </div>
-        </div>
-
-        <div class="gpu-recommendation">
-          <h3>🎯 GPU Recommendation</h3>
-          <div id="gpuRecommendation"></div>
-        </div>
-
-        <div id="contextTable" style="margin-top: 20px"></div>
-      </div>
+                    <!-- Context Scaling Matrix -->
+                    <div class="glass-panel rounded-3xl overflow-hidden border border-slate-700/50 flex flex-col">
+                        <div class="p-5 border-b border-slate-700 bg-slate-800/20 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Context Scaling</h3>
+                            <span class="text-[10px] text-blue-500 font-bold px-3 py-1 bg-blue-500/10 rounded uppercase tracking-widest">Scaling Data</span>
+                        </div>
+                        <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-[10px] text-slate-500 uppercase sticky top-0 bg-slate-900 border-b border-slate-800">
+                                    <tr>
+                                        <th class="px-6 py-4 font-black">Tokens</th>
+                                        <th class="px-6 py-4 font-black">KV Load</th>
+                                        <th class="px-6 py-4 font-black text-right">Total Est</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scaleTable" class="divide-y divide-slate-800/50">
+                                    <!-- JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="mt-16 text-center text-slate-600 text-[10px] uppercase font-bold tracking-[0.3em] opacity-40">
+            GPU VRAM Calculator • Build 2026.4.15 • <a href="https://iamickdev.com" class="text-blue-500 hover:underline">arnonsang</a>
+        </footer>
     </div>
 
     <script>
-      const presets = {
-        "qwen25-30b": {
-          name: "Qwen2.5-30B",
-          layers: 96,
-          hiddenSize: 7168,
-          kvDtype: 1,
-          baseModelSize: 35,
-        },
-        "llama3-70b": {
-          name: "Llama 3-70B",
-          layers: 80,
-          hiddenSize: 8192,
-          kvDtype: 2,
-          baseModelSize: 70,
-        },
-        "llama3-8b": {
-          name: "Llama 3-8B",
-          layers: 32,
-          hiddenSize: 4096,
-          kvDtype: 2,
-          baseModelSize: 8,
-        },
-        "mistral-7b": {
-          name: "Mistral-7B",
-          layers: 32,
-          hiddenSize: 4096,
-          kvDtype: 2,
-          baseModelSize: 7,
-        },
-      };
+        const inputIds = ['params', 'paramRange', 'layers', 'hiddenSize', 'kvHeads', 'numHeads', 'kvDtype', 'contextRange', 'bitsPerWeight'];
+        
+        const gpus = [
+            { name: "T4", vram: 16, class: "Legacy Cloud", emoji: "🟢" },
+            { name: "P100", vram: 16, class: "Legacy Cloud", emoji: "🟢" },
+            { name: "V100", vram: 16, class: "Legacy HPC", emoji: "🟢" },
+            { name: "RTX 3060", vram: 12, class: "Entry Consumer", emoji: "🟡" },
+            { name: "RTX 4060 Ti", vram: 16, class: "Mid Consumer", emoji: "🟡" },
+            { name: "RTX 3090", vram: 24, class: "Top Consumer", emoji: "🟡" },
+            { name: "RTX 4090", vram: 24, class: "Top Consumer", emoji: "🟡" },
+            { name: "RTX 6000 Ada", vram: 48, class: "Workstation", emoji: "🟠" },
+            { name: "RTX PRO 6000 BW", vram: 96, class: "Workstation+", emoji: "🟠" },
+            { name: "A10", vram: 24, class: "Cloud Mid", emoji: "🔵" },
+            { name: "A10G", vram: 24, class: "Cloud Mid", emoji: "🔵" },
+            { name: "L4", vram: 24, class: "Inference", emoji: "🔵" },
+            { name: "L40", vram: 48, class: "Inference+", emoji: "🔵" },
+            { name: "L40S", vram: 48, class: "Inference+/Training", emoji: "🔵" },
+            { name: "A100 40GB", vram: 40, class: "Enterprise (A-Series)", emoji: "🔴" },
+            { name: "A100 80GB", vram: 80, class: "Enterprise (A-Series)", emoji: "🔴" },
+            { name: "H100 80GB", vram: 80, class: "Enterprise (H-Series)", emoji: "🟣" },
+            { name: "H200", vram: 141, class: "Enterprise (H-Series)", emoji: "🟣" },
+            { name: "B200", vram: 192, class: "Frontier (Blackwell)", emoji: "🟣" },
+            { name: "GB200 Superchip", vram: 192, class: "Frontier (Blackwell)", emoji: "🟣" },
+            { name: "MI250", vram: 128, class: "Enterprise (AMD)", emoji: "🟤" },
+            { name: "MI300X", vram: 192, class: "Frontier (AMD)", emoji: "🟤" }
+        ];
 
-      function loadPreset(presetName) {
-        const preset = presets[presetName];
-        document.getElementById("modelName").value = preset.name;
-        document.getElementById("numLayers").value = preset.layers;
-        document.getElementById("hiddenSize").value = preset.hiddenSize;
-        document.getElementById("kvDtype").value = preset.kvDtype;
-        document.getElementById("baseModelSize").value = preset.baseModelSize;
-      }
+        const presets = {
+            'Gemma 4 Series': {
+                'gemma4-e2b': { params: 5.1, layers: 26, hiddenSize: 2048, kvHeads: 8, numHeads: 16, context: 128000, bits: 8 },
+                'gemma4-e4b': { params: 8.0, layers: 30, hiddenSize: 2560, kvHeads: 8, numHeads: 20, context: 128000, bits: 8 },
+                'gemma4-26b-a4b': { params: 26, layers: 46, hiddenSize: 4608, kvHeads: 16, numHeads: 32, context: 256000, bits: 4 },
+                'gemma4-31b': { params: 31, layers: 48, hiddenSize: 5120, kvHeads: 16, numHeads: 32, context: 256000, bits: 4.5 }
+            },
+            'Qwen 3.5 Series': {
+                'qwen35-0.8b': { params: 0.8, layers: 24, hiddenSize: 1024, kvHeads: 4, numHeads: 8, context: 256000, bits: 8 },
+                'qwen35-2b': { params: 2.1, layers: 28, hiddenSize: 2048, kvHeads: 8, numHeads: 16, context: 256000, bits: 8 },
+                'qwen35-4b': { params: 4.6, layers: 32, hiddenSize: 2560, kvHeads: 8, numHeads: 20, context: 256000, bits: 8 },
+                'qwen35-9b': { params: 9.6, layers: 36, hiddenSize: 4096, kvHeads: 8, numHeads: 32, context: 256000, bits: 8 },
+                'qwen35-27b': { params: 27.8, layers: 48, hiddenSize: 6144, kvHeads: 8, numHeads: 48, context: 256000, bits: 4.5 },
+                'qwen35-35b-a3b': { params: 35, layers: 52, hiddenSize: 7168, kvHeads: 8, numHeads: 56, context: 256000, bits: 4 },
+                'qwen35-122b-a10b': { params: 122, layers: 80, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 256000, bits: 4 },
+                'qwen35-397b-a17b': { params: 397, layers: 120, hiddenSize: 12288, kvHeads: 16, numHeads: 96, context: 256000, bits: 4 }
+            },
+            'GLM Frontier': {
+                'glm-4.5': { params: 355, layers: 64, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 131072, bits: 4 },
+                'glm-4.5-air': { params: 106, layers: 48, hiddenSize: 6144, kvHeads: 16, numHeads: 48, context: 131072, bits: 4 },
+                'glm-4.6': { params: 335, layers: 72, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 200000, bits: 4 },
+                'glm-4.7': { params: 70, layers: 48, hiddenSize: 6144, kvHeads: 8, numHeads: 48, context: 131072, bits: 8 },
+                'glm-5': { params: 744, layers: 96, hiddenSize: 12288, kvHeads: 16, numHeads: 96, context: 200000, bits: 4 }
+            },
+            'MiniMax': {
+                'minimax-m2': { params: 180, layers: 72, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 131072, bits: 4 },
+                'minimax-m2.5': { params: 230, layers: 80, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 200000, bits: 4 },
+                'minimax-m2.7': { params: 456, layers: 96, hiddenSize: 10240, kvHeads: 16, numHeads: 80, context: 200000, bits: 4 }
+            },
+            'Llama 4 Frontier': {
+                'llama4-scout': { params: 109, layers: 80, hiddenSize: 8192, kvHeads: 16, numHeads: 64, context: 10000000, bits: 4 },
+                'llama4-maverick': { params: 400, layers: 120, hiddenSize: 12288, kvHeads: 16, numHeads: 96, context: 10000000, bits: 4 }
+            },
+            'DeepSeek & Others': {
+                'deepseek-v3.2': { params: 671, layers: 61, hiddenSize: 7168, kvHeads: 128, numHeads: 128, context: 163840, bits: 4 },
+                'deepseek-r1': { params: 671, layers: 61, hiddenSize: 7168, kvHeads: 128, numHeads: 128, context: 131072, bits: 4 },
+                'mixtral-8x22b': { params: 176, layers: 56, hiddenSize: 6144, kvHeads: 8, numHeads: 48, context: 65536, bits: 4 },
+                'phi-4': { params: 14, layers: 40, hiddenSize: 5120, kvHeads: 8, numHeads: 40, context: 128000, bits: 8 },
+                'tinyllama-1.1b': { params: 1.1, layers: 22, hiddenSize: 2048, kvHeads: 4, numHeads: 16, context: 32768, bits: 16 }
+            }
+        };
 
-      document
-        .getElementById("calcForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
-          calculate();
-        });
-
-      function calculate() {
-        const layers = parseInt(document.getElementById("numLayers").value);
-        const hiddenSize = parseInt(
-          document.getElementById("hiddenSize").value
-        );
-        const kvDtypeBytes = parseInt(document.getElementById("kvDtype").value);
-        const baseModelSize = parseFloat(
-          document.getElementById("baseModelSize").value
-        );
-        const contextSize = parseInt(
-          document.getElementById("contextSize").value
-        );
-        const modelName =
-          document.getElementById("modelName").value || "Your Model";
-
-        // KV cache calculation
-        // Formula: layers × hidden_size × 2 (K+V) × bytes_per_element
-        const kvPerTokenBytes = layers * hiddenSize * 2 * kvDtypeBytes;
-        const kvPerTokenMB = kvPerTokenBytes / (1024 * 1024);
-
-        // Total KV cache for context
-        const totalKvCacheGB = (contextSize * kvPerTokenMB) / 1024;
-
-        // Total VRAM with 10% overhead
-        const overhead = (baseModelSize + totalKvCacheGB) * 0.1;
-        const totalVram = baseModelSize + totalKvCacheGB + overhead;
-
-        // Display results
-        document.getElementById("results").style.display = "block";
-        document.getElementById(
-          "kvPerToken"
-        ).textContent = `${kvPerTokenMB.toFixed(2)} MB`;
-        document.getElementById(
-          "kvPerTokenDetail"
-        ).textContent = `${layers} layers × ${hiddenSize} hidden × 2 (K+V) × ${kvDtypeBytes}B`;
-
-        document.getElementById(
-          "baseModelVram"
-        ).textContent = `${baseModelSize.toFixed(1)} GB`;
-        document.getElementById(
-          "kvCacheVram"
-        ).textContent = `${totalKvCacheGB.toFixed(1)} GB`;
-        document.getElementById(
-          "overheadVram"
-        ).textContent = `${overhead.toFixed(1)} GB`;
-        document.getElementById("totalVram").textContent = `${totalVram.toFixed(
-          1
-        )} GB`;
-
-        // GPU recommendation
-        const h100Count = Math.ceil(totalVram / 80);
-        const a100Count = Math.ceil(totalVram / 80);
-        const l40sCount = Math.ceil(totalVram / 48);
-
-        let recommendation = "";
-        if (totalVram <= 24) {
-          recommendation = `<div class="success">✅ <strong>1× RTX 4090 (24GB)</strong> or <strong>1× RTX A5000 (24GB)</strong> is sufficient</div>`;
-        } else if (totalVram <= 48) {
-          recommendation = `<div class="success">✅ <strong>1× L40S (48GB)</strong> or <strong>1× A6000 (48GB)</strong> is sufficient</div>`;
-        } else if (totalVram <= 80) {
-          recommendation = `<div class="warning">⚠️ You need <strong>1× H100 (80GB)</strong> or <strong>1× A100 (80GB)</strong></div>`;
-        } else {
-          recommendation = `
-                    <div class="warning">
-                        ⚠️ Single GPU insufficient. Options:<br>
-                        • <strong>${h100Count}× H100 (80GB)</strong> - Recommended for production<br>
-                        • <strong>${a100Count}× A100 (80GB)</strong> - Alternative<br>
-                        • <strong>${l40sCount}× L40S (48GB)</strong> - Budget option
-                    </div>
-                `;
+        function populatePresets() {
+            const select = document.getElementById('presetSelect');
+            select.innerHTML = '';
+            
+            for (const [category, models] of Object.entries(presets)) {
+                const group = document.createElement('optgroup');
+                group.label = category;
+                
+                for (const modelKey of Object.keys(models)) {
+                    const option = document.createElement('option');
+                    option.value = modelKey;
+                    option.textContent = modelKey.replace(/-/g, ' ').toUpperCase();
+                    group.appendChild(option);
+                }
+                select.appendChild(group);
+            }
         }
 
-        document.getElementById("gpuRecommendation").innerHTML = recommendation;
+        function init() {
+            populatePresets();
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                el.addEventListener('input', (e) => {
+                    if (id === 'params') document.getElementById('paramRange').value = e.target.value;
+                    if (id === 'paramRange') document.getElementById('params').value = e.target.value;
+                    calculate();
+                });
+            });
+            // Load first available model
+            loadPreset(Object.keys(presets['Gemma 4 Series'])[0]);
+            calculate();
+        }
 
-        // Context size table
-        generateContextTable(
-          layers,
-          hiddenSize,
-          kvDtypeBytes,
-          baseModelSize,
-          kvPerTokenMB
-        );
+        function setPrecision(bits, btn) {
+            document.getElementById('bitsPerWeight').value = bits;
+            document.querySelectorAll('.prec-btn').forEach(b => {
+                b.className = "prec-btn py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition-all";
+            });
+            btn.className = "prec-btn py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20";
+            calculate();
+        }
 
-        // Scroll to results
-        document
-          .getElementById("results")
-          .scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
+        function loadPreset(key) {
+            let modelData = null;
+            for (const cat of Object.values(presets)) {
+                if (cat[key]) {
+                    modelData = cat[key];
+                    break;
+                }
+            }
+            if (!modelData) return;
 
-      function generateContextTable(
-        layers,
-        hiddenSize,
-        kvDtypeBytes,
-        baseModelSize,
-        kvPerTokenMB
-      ) {
-        const contexts = [
-          8000, 16000, 32000, 65000, 100000, 128000, 200000, 256000,
-        ];
-        let tableHTML =
-          '<h3 style="margin-bottom: 15px;">Context Size Scenarios</h3>';
-        tableHTML +=
-          '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse;">';
-        tableHTML +=
-          '<thead><tr style="background: rgba(255,255,255,0.2);"><th style="padding: 10px; text-align: left;">Context</th><th style="padding: 10px; text-align: right;">KV Cache</th><th style="padding: 10px; text-align: right;">Total VRAM</th><th style="padding: 10px; text-align: left;">GPU Needed</th></tr></thead>';
-        tableHTML += "<tbody>";
+            document.getElementById('params').value = modelData.params;
+            document.getElementById('paramRange').value = modelData.params;
+            document.getElementById('layers').value = modelData.layers;
+            document.getElementById('hiddenSize').value = modelData.hiddenSize;
+            document.getElementById('kvHeads').value = modelData.kvHeads;
+            document.getElementById('numHeads').value = modelData.numHeads;
+            document.getElementById('contextRange').value = modelData.context;
+            
+            const precBtns = document.querySelectorAll('.prec-btn');
+            if (modelData.bits === 16) setPrecision(16, precBtns[0]);
+            else if (modelData.bits === 8) setPrecision(8, precBtns[1]);
+            else if (modelData.bits >= 4) setPrecision(4.5, precBtns[2]);
+            else setPrecision(1.5, precBtns[3]);
 
-        contexts.forEach((ctx) => {
-          const kvCache = (ctx * kvPerTokenMB) / 1024;
-          const overhead = (baseModelSize + kvCache) * 0.1;
-          const total = baseModelSize + kvCache + overhead;
-          let gpuText = "";
+            calculate();
+        }
 
-          if (total <= 24) gpuText = "1× 4090/A5000";
-          else if (total <= 48) gpuText = "1× L40S/A6000";
-          else if (total <= 80) gpuText = "1× H100/A100";
-          else gpuText = `${Math.ceil(total / 80)}× H100`;
+        function formatContext(val) {
+            if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+            if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+            return val;
+        }
 
-          tableHTML += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <td style="padding: 10px;">${(ctx / 1000).toFixed(0)}k</td>
-                    <td style="padding: 10px; text-align: right;">${kvCache.toFixed(
-                      1
-                    )} GB</td>
-                    <td style="padding: 10px; text-align: right;"><strong>${total.toFixed(
-                      1
-                    )} GB</strong></td>
-                    <td style="padding: 10px;">${gpuText}</td>
-                </tr>`;
-        });
+        function calculate() {
+            const params = parseFloat(document.getElementById('params').value) || 0;
+            const layers = parseInt(document.getElementById('layers').value) || 0;
+            const hiddenSize = parseInt(document.getElementById('hiddenSize').value) || 0;
+            const kvHeads = parseInt(document.getElementById('kvHeads').value) || 0;
+            const numHeads = parseInt(document.getElementById('numHeads').value) || 1;
+            const kvBytes = parseFloat(document.getElementById('kvDtype').value);
+            const bitsPerWeight = parseFloat(document.getElementById('bitsPerWeight').value);
+            const context = parseInt(document.getElementById('contextRange').value);
 
-        tableHTML += "</tbody></table></div>";
-        document.getElementById("contextTable").innerHTML = tableHTML;
-      }
+            document.getElementById('contextVal').textContent = formatContext(context);
+            
+            const weightMem = (params * bitsPerWeight) / 8;
+            const headDim = hiddenSize / numHeads;
+            const kvCacheBytesPerToken = 2 * layers * kvHeads * headDim * kvBytes;
+            const kvCacheMem = (context * kvCacheBytesPerToken) / (1024 ** 3);
+            const overhead = 2.2; 
+            const total = weightMem + kvCacheMem + overhead;
+
+            document.getElementById('totalVramDisplay').textContent = total.toFixed(2);
+            document.getElementById('weightValText').textContent = weightMem.toFixed(1) + ' GB';
+            document.getElementById('kvValText').textContent = kvCacheMem.toFixed(1) + ' GB';
+            document.getElementById('ctxSizeMB').textContent = (kvCacheBytesPerToken / 1024).toFixed(2);
+
+            const totalForBar = Math.max(total, 0.1);
+            document.getElementById('barWeights').style.width = (weightMem / totalForBar * 100) + '%';
+            document.getElementById('barKV').style.width = (kvCacheMem / totalForBar * 100) + '%';
+            document.getElementById('barOverhead').style.width = (overhead / totalForBar * 100) + '%';
+
+            const notice = document.getElementById('contextNotice');
+            if (context > 4000000) notice.classList.remove('hidden'); else notice.classList.add('hidden');
+
+            updateStatus(total);
+            updateGpuMatrix(total);
+            generateScaleTable(layers, kvHeads, headDim, kvBytes, weightMem, overhead);
+        }
+
+        function updateStatus(total) {
+            const badge = document.getElementById('statusBadge');
+            const container = document.getElementById('gaugeContainer');
+            const recommendationName = document.getElementById('recommendedGpuName');
+            
+            container.classList.remove('warning-glow', 'border-red-500/20', 'border-yellow-500/20');
+            
+            if (total < 12) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 border border-green-500/20 shadow-xl";
+                badge.textContent = "Entry Tier";
+                recommendationName.textContent = "RTX 3060 (12GB) or L4 (24GB)";
+            } else if (total < 23.5) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 border border-green-500/20 shadow-xl";
+                badge.textContent = "Consumer Tier";
+                recommendationName.textContent = "RTX 4090 (24GB)";
+            } else if (total < 46) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-xl";
+                badge.textContent = "Workstation Class";
+                recommendationName.textContent = "RTX 6000 Ada (48GB) or 2x RTX 4090";
+            } else if (total < 78) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-xl";
+                badge.textContent = "Enterprise Tier";
+                recommendationName.textContent = "H100 (80GB) or RTX 6000 BW (96GB)";
+            } else if (total < 138) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 shadow-xl";
+                badge.textContent = "HPC Node";
+                recommendationName.textContent = "H200 (141GB) or MI300X";
+            } else if (total < 185) {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 shadow-xl";
+                badge.textContent = "Blackwell Node";
+                recommendationName.textContent = "B200 (192GB)";
+            } else {
+                badge.className = "px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-xl";
+                badge.textContent = "Frontier Cluster";
+                recommendationName.textContent = `${Math.ceil(total / 192)}x B200 Multi-Node`;
+                container.classList.add('warning-glow', 'border-red-500/20');
+            }
+        }
+
+        function updateGpuMatrix(total) {
+            const body = document.getElementById('gpuMatrixBody');
+            body.innerHTML = '';
+            const classes = [...new Set(gpus.map(g => g.class))];
+            
+            classes.forEach(cls => {
+                const clsGpus = gpus.filter(g => g.class === cls);
+                const clsEmoji = clsGpus[0].emoji;
+                
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "space-y-4";
+                
+                const header = document.createElement('h4');
+                header.className = "text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3 border-b border-slate-800/50 pb-2 mb-2";
+                header.innerHTML = `<span class="text-base">${clsEmoji}</span> ${cls}`;
+                groupDiv.appendChild(header);
+                
+                const listDiv = document.createElement('div');
+                listDiv.className = "grid grid-cols-1 gap-2 pt-1";
+                
+                clsGpus.forEach(gpu => {
+                    const count = Math.ceil(total / (gpu.vram * 0.94));
+                    const isPossible = count <= 128; 
+                    
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between p-3.5 rounded-2xl transition-all " + (isPossible ? "hover:bg-white/5 border border-white/5 hover:border-white/10" : "opacity-30 grayscale");
+                    item.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-slate-200 tracking-tight">${gpu.name} <small class="text-slate-500 font-medium ml-1">${gpu.vram}GB</small></span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm font-black ${isPossible ? (count <= 1 ? 'text-green-400' : (count < 8 ? 'text-blue-400' : 'text-yellow-400')) : 'text-slate-600'}">${count}x</span>
+                            <div class="flex gap-1">
+                                ${Array.from({length: Math.min(count, 4)}).map(() => `<div class="w-1.5 h-4 rounded-full bg-blue-500/40"></div>`).join('')}
+                                ${count > 4 ? '<span class="text-xs text-slate-600 font-bold self-center">+</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    listDiv.appendChild(item);
+                });
+                
+                groupDiv.appendChild(listDiv);
+                body.appendChild(groupDiv);
+            });
+        }
+
+        function generateScaleTable(layers, kvHeads, headDim, kvBytes, weightMem, overhead) {
+            const tbody = document.getElementById('scaleTable');
+            tbody.innerHTML = '';
+            const points = [128000, 512000, 1000000, 4000000, 10000000];
+            
+            points.forEach(ctx => {
+                const kvMem = (2 * layers * kvHeads * headDim * ctx * kvBytes) / (1024 ** 3);
+                const total = weightMem + kvMem + overhead;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-800/50 transition-colors group";
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-slate-300 font-bold font-mono tracking-tight group-hover:text-white transition-colors">${formatContext(ctx)}</td>
+                    <td class="px-6 py-4 text-slate-500 font-medium">${kvMem.toFixed(1)} GB</td>
+                    <td class="px-6 py-4 text-right font-black ${total > 500 ? 'text-red-400' : (total > 80 ? 'text-blue-400' : 'text-green-400')} tracking-tighter">${total.toFixed(1)} GB</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        init();
     </script>
-  </body>
+</body>
 </html>
